@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Parkir Telaga Biru</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f5f7fa; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 15px; }
+    .hidden { display: none !important; }
+    .header { display: flex; justify-content: space-between; align-items: center; background: #1a73e8; color: white; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; }
+    .header h1 { font-size: 1.5rem; }
+    .btn { border: none; border-radius: 8px; padding: 12px 16px; font-size: 1rem; font-weight: bold; cursor: pointer; background: #e0e0e0; color: #333; transition: background 0.2s; }
+    .btn.primary { background: #1a73e8; color: white; }
+    .btn.danger { background: #d32f2f; color: white; }
+    .btn.success { background: #2e7d32; color: white; }
+    .btn.warning { background: #f57c00; color: white; }
+    .btn.small { padding: 8px 12px; font-size: 0.9rem; }
+    .btn:active { opacity: 0.8; }
+    .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .flex-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .flex-col { display: flex; flex-direction: column; gap: 10px; }
+    input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 8px; font-size: 1rem; }
+    input:focus, select:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.2); }
+    label { font-weight: 500; margin-bottom: 4px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    img.thumbnail { width: 60px; height: 60px; object-fit: cover; border-radius: 8px; }
+    img.preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 8px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px; text-align: left; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+    th { background: #f5f5f5; }
+    .autocomplete-wrap { position: relative; }
+    .suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ccc; border-top: none; max-height: 150px; overflow-y: auto; z-index: 10; border-radius: 0 0 8px 8px; }
+    .suggestions div { padding: 10px; cursor: pointer; }
+    .suggestions div:hover { background: #e8f0fe; }
+    .login-box { max-width: 340px; margin: 40px auto; }
+    @media (max-width: 400px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .btn { padding: 10px; font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="container">
+    <!-- Login Petugas -->
+    <div id="loginSection" class="card login-box">
+      <h2 style="text-align:center; margin-bottom:16px;">Parkir TB - Login Petugas</h2>
+      <input type="password" id="passwordPetugas" placeholder="Password petugas" autocomplete="off">
+      <button class="btn primary" style="width:100%; margin-top:12px;" onclick="loginPetugas()">Masuk</button>
+      <p style="color:red; text-align:center; margin-top:8px;" id="loginError"></p>
+      <p style="text-align:center; font-size:0.8rem; margin-top:8px;">Default: 12345</p>
+    </div>
+
+    <!-- Halaman Petugas -->
+    <div id="petugasSection" class="hidden">
+      <div class="header">
+        <h1>🚗 Parkir TB</h1>
+        <button class="btn small" onclick="showAdminPrompt()">Admin</button>
+      </div>
+
+      <!-- Input Kendaraan Masuk -->
+      <div class="card">
+        <h3>➕ Kendaraan Masuk</h3>
+        <div class="grid-2" style="margin:12px 0;">
+          <button id="btnMotor" class="btn" onclick="pilihJenis('motor')">🏍️ Motor (Rp2.000)</button>
+          <button id="btnMobil" class="btn" onclick="pilihJenis('mobil')">🚗 Mobil (Rp5.000)</button>
+        </div>
+        <input type="text" id="noPolisi" placeholder="Nomor Polisi (min. 8 karakter)" minlength="8" autocomplete="off">
+        <div class="flex-row" style="margin-top:10px;">
+          <input type="file" id="fotoInput" accept="image/*" capture="environment" style="flex:1;">
+          <button class="btn small" onclick="ambilFoto()">📷 Kamera</button>
+        </div>
+        <img id="previewFoto" class="preview hidden" alt="Preview">
+        <button class="btn success" style="width:100%; margin-top:12px;" onclick="simpanMasuk()">✔️ Simpan Masuk</button>
+      </div>
+
+      <!-- Kendaraan Keluar -->
+      <div class="card">
+        <h3>🚪 Kendaraan Keluar</h3>
+        <div class="autocomplete-wrap">
+          <input type="text" id="cariKeluar" placeholder="Ketik nomor polisi..." autocomplete="off" oninput="autocompleteKeluar()">
+          <div id="suggestionsBox" class="suggestions hidden"></div>
+        </div>
+        <div id="detailKeluar" class="hidden" style="margin-top:12px;">
+          <p><strong id="keluarPlat"></strong> (<span id="keluarJenis"></span>)</p>
+          <p>Masuk: <span id="keluarWaktuMasuk"></span></p>
+          <img id="keluarFoto" class="thumbnail" style="width:100px; height:100px; object-fit:cover;">
+          <button class="btn warning" style="margin-top:8px;" onclick="prosesKeluar()">✔️ Keluarkan</button>
+        </div>
+      </div>
+
+      <!-- Daftar Kendaraan Hari Ini -->
+      <div class="card">
+        <h3>📋 Masuk Hari Ini</h3>
+        <div id="daftarHariIni"></div>
+      </div>
+    </div>
+
+    <!-- Halaman Admin -->
+    <div id="adminSection" class="hidden">
+      <div class="header" style="background:#d32f2f;">
+        <h1>🔐 Admin Panel</h1>
+        <button class="btn small" onclick="kembaliKePetugas()">← Petugas</button>
+      </div>
+      <div class="card">
+        <h3>🔑 Ubah Password Petugas</h3>
+        <div class="flex-row">
+          <input type="password" id="newPetugasPass" placeholder="Password baru" style="flex:2;">
+          <button class="btn primary" onclick="ubahPasswordPetugas()">Simpan</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📜 Riwayat Semua Kendaraan</h3>
+        <input type="date" id="filterTanggal" onchange="loadRiwayatAdmin()">
+        <div id="riwayatAdmin"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCSJ5Jj_vBTjwsPFbGte6anXBoz7pJTtUQ",
+      authDomain: "parkir-tb.firebaseapp.com",
+      databaseURL: "https://parkir-tb-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "parkir-tb",
+      storageBucket: "parkir-tb.firebasestorage.app",
+      messagingSenderId: "815582557231",
+      appId: "1:815582557231:web:c2f43956612cef85cd82da"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // Cloudinary config
+    const CLOUD_NAME = 'dxque2xvu';
+    const UPLOAD_PRESET = 'parkir_tb_preset'; // Buat dulu di dashboard Cloudinary
+    const API_KEY = '275854795451865';
+    const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
+
+    // State
+    let jenisKendaraan = 'motor';
+    let passwordPetugas = '12345';
+    let passwordAdmin = '05092015';
+    let currentKeluarKey = null;
+    let daftarParkir = {}; // cache kendaraan status masuk
+
+    // DOM elements
+    const loginSection = document.getElementById('loginSection');
+    const petugasSection = document.getElementById('petugasSection');
+    const adminSection = document.getElementById('adminSection');
+    const btnMotor = document.getElementById('btnMotor');
+    const btnMobil = document.getElementById('btnMobil');
+    const previewFoto = document.getElementById('previewFoto');
+    const suggestionsBox = document.getElementById('suggestionsBox');
+    const detailKeluar = document.getElementById('detailKeluar');
+
+    // ============ INISIALISASI ============
+    async function init() {
+      // Ambil password dari Firebase, jika belum ada set default
+      const snap = await db.ref('/config').once('value');
+      const config = snap.val() || {};
+      if (!config.petugasPassword) {
+        await db.ref('/config/petugasPassword').set('12345');
+        passwordPetugas = '12345';
+      } else {
+        passwordPetugas = config.petugasPassword;
+      }
+      if (!config.adminPassword) {
+        await db.ref('/config/adminPassword').set('05092015');
+        passwordAdmin = '05092015';
+      } else {
+        passwordAdmin = config.adminPassword;
+      }
+      // Tampilkan login
+      loginSection.classList.remove('hidden');
+      petugasSection.classList.add('hidden');
+      adminSection.classList.add('hidden');
+    }
+
+    // ============ LOGIN PETUGAS ============
+    window.loginPetugas = async function() {
+      const input = document.getElementById('passwordPetugas').value;
+      const error = document.getElementById('loginError');
+      if (input === passwordPetugas) {
+        loginSection.classList.add('hidden');
+        petugasSection.classList.remove('hidden');
+        pilihJenis('motor'); // default
+        document.getElementById('noPolisi').value = '';
+        document.getElementById('fotoInput').value = '';
+        previewFoto.classList.add('hidden');
+        detailKeluar.classList.add('hidden');
+        suggestionsBox.classList.add('hidden');
+        document.getElementById('cariKeluar').value = '';
+        currentKeluarKey = null;
+        loadDaftarParkir();
+      } else {
+        error.textContent = 'Password salah!';
+      }
+    };
+
+    // ============ ADMIN LOGIN PROMPT ============
+    window.showAdminPrompt = function() {
+      const pass = prompt("Masukkan password admin:");
+      if (pass === passwordAdmin) {
+        petugasSection.classList.add('hidden');
+        adminSection.classList.remove('hidden');
+        loadRiwayatAdmin();
+      } else if (pass !== null) {
+        alert("Password admin salah!");
+      }
+    };
+
+    window.kembaliKePetugas = function() {
+      adminSection.classList.add('hidden');
+      petugasSection.classList.remove('hidden');
+      loadDaftarParkir();
+    };
+
+    // ============ PILIH JENIS ============
+    window.pilihJenis = function(jenis) {
+      jenisKendaraan = jenis;
+      btnMotor.style.background = jenis === 'motor' ? '#1a73e8' : '#e0e0e0';
+      btnMotor.style.color = jenis === 'motor' ? 'white' : '#333';
+      btnMobil.style.background = jenis === 'mobil' ? '#1a73e8' : '#e0e0e0';
+      btnMobil.style.color = jenis === 'mobil' ? 'white' : '#333';
+    };
+
+    // ============ AMBIL FOTO ============
+    window.ambilFoto = function() {
+      document.getElementById('fotoInput').click();
+    };
+
+    document.getElementById('fotoInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          previewFoto.src = ev.target.result;
+          previewFoto.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // ============ SIMPAN MASUK ============
+    window.simpanMasuk = async function() {
+      const noPol = document.getElementById('noPolisi').value.trim();
+      if (noPol.length < 8) {
+        alert('Nomor polisi minimal 8 karakter!');
+        return;
+      }
+      const fileInput = document.getElementById('fotoInput');
+      if (!fileInput.files || !fileInput.files[0]) {
+        alert('Harap ambil foto kendaraan!');
+        return;
+      }
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = 'Mengunggah...';
+      try {
+        // Upload ke Cloudinary
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        formData.append('api_key', API_KEY);
+        const res = await fetch(CLOUDINARY_URL, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!data.secure_url) throw new Error('Upload gagal');
+        const fotoUrl = data.secure_url;
+
+        // Simpan ke Firebase
+        const newRef = db.ref('/kendaraan').push();
+        const waktuMasuk = Date.now();
+        await newRef.set({
+          noPolisi: noPol.toUpperCase(),
+          jenis: jenisKendaraan,
+          waktuMasuk: waktuMasuk,
+          fotoMasuk: fotoUrl,
+          status: 'masuk',
+          waktuKeluar: null
+        });
+
+        // Reset form
+        document.getElementById('noPolisi').value = '';
+        fileInput.value = '';
+        previewFoto.classList.add('hidden');
+        loadDaftarParkir();
+        alert('Kendaraan tercatat!');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '✔️ Simpan Masuk';
+      }
+    };
+
+    // ============ LOAD DAFTAR PARKIR (status masuk) ============
+    function loadDaftarParkir() {
+      db.ref('/kendaraan').orderByChild('status').equalTo('masuk').on('value', snap => {
+        daftarParkir = snap.val() || {};
+        tampilkanDaftarHariIni();
+      });
+      // Daftar hari ini (semua status) untuk referensi
+      db.ref('/kendaraan').orderByChild('waktuMasuk').on('value', snap => {
+        tampilkanDaftarHariIni(snap.val());
+      });
+    }
+
+    function tampilkanDaftarHariIni(data) {
+      if (!data) data = daftarParkir; // fallback
+      const hariIni = new Date().toDateString();
+      const container = document.getElementById('daftarHariIni');
+      let html = '';
+      const entries = Object.entries(data || {}).filter(([key, val]) => {
+        const tglMasuk = new Date(val.waktuMasuk).toDateString();
+        return tglMasuk === hariIni;
+      }).sort((a,b) => b[1].waktuMasuk - a[1].waktuMasuk);
+      
+      if (entries.length === 0) {
+        html = '<p>Tidak ada data hari ini.</p>';
+      } else {
+        html = `<table>
+          <tr><th>No Pol</th><th>Jenis</th><th>Masuk</th><th>Status</th><th>Foto</th></tr>`;
+        entries.forEach(([key, val]) => {
+          const waktu = new Date(val.waktuMasuk).toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+          const status = val.status === 'masuk' ? '🟢 Masuk' : '🔴 Keluar';
+          html += `<tr>
+            <td>${val.noPolisi}</td>
+            <td>${val.jenis}</td>
+            <td>${waktu}</td>
+            <td>${status}</td>
+            <td><img src="${val.fotoMasuk}" class="thumbnail" onclick="window.open('${val.fotoMasuk}')" style="cursor:pointer;"></td>
+          </tr>`;
+        });
+        html += '</table>';
+      }
+      container.innerHTML = html;
+    }
+
+    // ============ AUTOCOMPLETE KELUAR ============
+    window.autocompleteKeluar = function() {
+      const input = document.getElementById('cariKeluar').value.trim().toUpperCase();
+      const box = suggestionsBox;
+      if (input.length === 0) {
+        box.classList.add('hidden');
+        return;
+      }
+      const matches = Object.entries(daftarParkir).filter(([key, val]) => 
+        val.noPolisi.includes(input)
+      );
+      if (matches.length === 0) {
+        box.classList.add('hidden');
+        return;
+      }
+      box.innerHTML = matches.map(([key, val]) => 
+        `<div data-key="${key}" onclick="pilihKendaraanKeluar('${key}')">${val.noPolisi} (${val.jenis})</div>`
+      ).join('');
+      box.classList.remove('hidden');
+    };
+
+    window.pilihKendaraanKeluar = function(key) {
+      const val = daftarParkir[key];
+      document.getElementById('cariKeluar').value = val.noPolisi;
+      suggestionsBox.classList.add('hidden');
+      detailKeluar.classList.remove('hidden');
+      document.getElementById('keluarPlat').textContent = val.noPolisi;
+      document.getElementById('keluarJenis').textContent = val.jenis;
+      document.getElementById('keluarWaktuMasuk').textContent = new Date(val.waktuMasuk).toLocaleString('id-ID');
+      document.getElementById('keluarFoto').src = val.fotoMasuk;
+      currentKeluarKey = key;
+    };
+
+    window.prosesKeluar = async function() {
+      if (!currentKeluarKey) return;
+      if (!confirm('Keluarkan kendaraan ini?')) return;
+      await db.ref(`/kendaraan/${currentKeluarKey}`).update({
+        status: 'keluar',
+        waktuKeluar: Date.now()
+      });
+      detailKeluar.classList.add('hidden');
+      document.getElementById('cariKeluar').value = '';
+      currentKeluarKey = null;
+      loadDaftarParkir();
+    };
+
+    // ============ ADMIN ============
+    async function loadRiwayatAdmin() {
+      const tgl = document.getElementById('filterTanggal').value;
+      const snap = await db.ref('/kendaraan').once('value');
+      const data = snap.val() || {};
+      const entries = Object.entries(data).sort((a,b) => b[1].waktuMasuk - a[1].waktuMasuk);
+      const container = document.getElementById('riwayatAdmin');
+      let html = '<table><tr><th>Aksi</th><th>No Pol</th><th>Jenis</th><th>Masuk</th><th>Keluar</th><th>Status</th><th>Foto</th></tr>';
+      for (const [key, val] of entries) {
+        const tglMasuk = new Date(val.waktuMasuk).toLocaleDateString('id-ID');
+        if (tgl && tglMasuk !== new Date(tgl).toLocaleDateString('id-ID')) continue;
+        const waktuMasuk = new Date(val.waktuMasuk).toLocaleString('id-ID');
+        const waktuKeluar = val.waktuKeluar ? new Date(val.waktuKeluar).toLocaleString('id-ID') : '-';
+        const status = val.status === 'masuk' ? '🟢' : '🔴';
+        html += `<tr>
+          <td>
+            <button class="btn small warning" onclick="editKendaraan('${key}')">Edit</button>
+            <button class="btn small danger" onclick="hapusKendaraan('${key}')">Hapus</button>
+          </td>
+          <td>${val.noPolisi}</td>
+          <td>${val.jenis}</td>
+          <td>${waktuMasuk}</td>
+          <td>${waktuKeluar}</td>
+          <td>${status}</td>
+          <td><img src="${val.fotoMasuk}" class="thumbnail" onclick="window.open('${val.fotoMasuk}')" style="cursor:pointer;"></td>
+        </tr>`;
+      }
+      html += '</table>';
+      if (entries.length === 0) html = '<p>Tidak ada data.</p>';
+      container.innerHTML = html;
+    }
+
+    window.editKendaraan = async function(key) {
+      const snap = await db.ref(`/kendaraan/${key}`).once('value');
+      const data = snap.val();
+      const noBaru = prompt('Edit nomor polisi:', data.noPolisi);
+      if (noBaru !== null && noBaru.trim().length >= 8) {
+        await db.ref(`/kendaraan/${key}`).update({ noPolisi: noBaru.trim().toUpperCase() });
+        loadRiwayatAdmin();
+      }
+    };
+
+    window.hapusKendaraan = async function(key) {
+      if (confirm('Hapus permanen data ini?')) {
+        await db.ref(`/kendaraan/${key}`).remove();
+        loadRiwayatAdmin();
+      }
+    };
+
+    window.ubahPasswordPetugas = async function() {
+      const newPass = document.getElementById('newPetugasPass').value.trim();
+      if (newPass.length < 4) {
+        alert('Password minimal 4 karakter');
+        return;
+      }
+      await db.ref('/config/petugasPassword').set(newPass);
+      passwordPetugas = newPass;
+      alert('Password petugas berhasil diubah');
+      document.getElementById('newPetugasPass').value = '';
+    };
+
+    // Klik di luar suggestion box
+    document.addEventListener('click', function(e) {
+      if (!e.target.closest('#cariKeluar') && !e.target.closest('#suggestionsBox')) {
+        suggestionsBox.classList.add('hidden');
+      }
+    });
+
+    // Start
+    init();
+  </script>
+</body>
+</html>
