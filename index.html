@@ -52,17 +52,27 @@
     <!-- ========== LOGIN ========== -->
     <div id="loginSection" class="card login-box">
       <h2 style="text-align:center; margin-bottom:14px;">🔐 Parkir TB - Login</h2>
-      <input type="password" id="passwordPetugas" placeholder="Password petugas" autocomplete="off">
-      <button class="btn primary" style="width:100%; margin-top:10px;" onclick="loginPetugas()">Masuk</button>
-      <p style="color:red; text-align:center; margin-top:8px;" id="loginError"></p>
-      <p style="text-align:center; font-size:0.78rem; margin-top:6px;">Default: 12345</p>
+      <div style="margin-bottom:16px;">
+        <label>Password Petugas</label>
+        <input type="password" id="passwordPetugas" placeholder="Password petugas" autocomplete="off">
+        <button class="btn primary" style="width:100%; margin-top:8px;" onclick="loginPetugas()">Masuk Petugas</button>
+        <p style="color:red; text-align:center; margin-top:6px;" id="loginError"></p>
+      </div>
+      <hr style="margin:16px 0;">
+      <div>
+        <label>Password Admin</label>
+        <input type="password" id="passwordAdminInput" placeholder="Password admin" autocomplete="off">
+        <button class="btn danger" style="width:100%; margin-top:8px;" onclick="loginAdmin()">Masuk Admin</button>
+        <p style="color:red; text-align:center; margin-top:6px;" id="adminLoginError"></p>
+      </div>
+      <p style="text-align:center; font-size:0.78rem; margin-top:12px;">Default: Petugas 12345 | Admin 05092015</p>
     </div>
 
     <!-- ========== HALAMAN PETUGAS ========== -->
     <div id="petugasSection" class="hidden">
       <div class="header">
         <h1>🚗 Parkir TB</h1>
-        <button class="btn small" onclick="showAdminPrompt()">Admin</button>
+        <button class="btn small" onclick="logout()">↩️ Logout</button>
       </div>
 
       <div class="card">
@@ -104,7 +114,7 @@
     <div id="adminSection" class="hidden">
       <div class="header" style="background:#c62828;">
         <h1>🔐 Admin Panel</h1>
-        <button class="btn small" onclick="kembaliKePetugas()">← Petugas</button>
+        <button class="btn small" onclick="logout()">↩️ Logout</button>
       </div>
 
       <!-- LAPORAN KEUANGAN -->
@@ -195,7 +205,6 @@
             const canvas = document.createElement('canvas');
             let width = img.width;
             let height = img.height;
-            // Kurangi dimensi jika terlalu besar
             const maxDim = 1200;
             if (width > maxDim || height > maxDim) {
               const ratio = Math.min(maxDim / width, maxDim / height);
@@ -206,7 +215,6 @@
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
-            // Mulai dengan kualitas 0.8, turunkan sampai < maxKB
             let quality = 0.8;
             const tryCompress = (q) => {
               canvas.toBlob((blob) => {
@@ -246,19 +254,50 @@
       adminSection.classList.add('hidden');
     }
 
-    // ============ LOGIN ============
+    // ============ LOGIN PETUGAS ============
     window.loginPetugas = async function() {
       const input = document.getElementById('passwordPetugas').value;
       const error = document.getElementById('loginError');
       if (input === passwordPetugas) {
         loginSection.classList.add('hidden');
         petugasSection.classList.remove('hidden');
+        adminSection.classList.add('hidden');
         pilihJenis('motor');
         resetFormMasuk();
         loadDaftarParkir();
+        error.textContent = '';
       } else {
-        error.textContent = 'Password salah!';
+        error.textContent = 'Password petugas salah!';
       }
+    };
+
+    // ============ LOGIN ADMIN (langsung dari halaman login) ============
+    window.loginAdmin = async function() {
+      const input = document.getElementById('passwordAdminInput').value;
+      const error = document.getElementById('adminLoginError');
+      if (input === passwordAdmin) {
+        loginSection.classList.add('hidden');
+        petugasSection.classList.add('hidden');
+        adminSection.classList.remove('hidden');
+        loadLaporan();
+        loadRiwayatAdmin();
+        error.textContent = '';
+      } else {
+        error.textContent = 'Password admin salah!';
+      }
+    };
+
+    // ============ LOGOUT (kembali ke login) ============
+    window.logout = function() {
+      // Kembalikan ke halaman login, reset semua
+      loginSection.classList.remove('hidden');
+      petugasSection.classList.add('hidden');
+      adminSection.classList.add('hidden');
+      document.getElementById('passwordPetugas').value = '';
+      document.getElementById('passwordAdminInput').value = '';
+      document.getElementById('loginError').textContent = '';
+      document.getElementById('adminLoginError').textContent = '';
+      resetFormMasuk();
     };
 
     function resetFormMasuk() {
@@ -270,24 +309,6 @@
       document.getElementById('cariKeluar').value = '';
       currentKeluarKey = null;
     }
-
-    window.showAdminPrompt = function() {
-      const pass = prompt("Masukkan password admin:");
-      if (pass === passwordAdmin) {
-        petugasSection.classList.add('hidden');
-        adminSection.classList.remove('hidden');
-        loadLaporan();
-        loadRiwayatAdmin();
-      } else if (pass !== null) {
-        alert("Password admin salah!");
-      }
-    };
-
-    window.kembaliKePetugas = function() {
-      adminSection.classList.add('hidden');
-      petugasSection.classList.remove('hidden');
-      loadDaftarParkir();
-    };
 
     // ============ PILIH JENIS ============
     window.pilihJenis = function(jenis) {
@@ -331,7 +352,6 @@
       btn.disabled = true;
       btn.textContent = '⏳ Kompresi...';
       try {
-        // Kompresi dulu
         const compressed = await kompresFoto(fileInput.files[0], 400);
         btn.textContent = '⏳ Upload...';
         const formData = new FormData();
@@ -479,7 +499,6 @@
         🏍️ Motor: <b>${motor}</b> x Rp2.000 = Rp${motor * 2000}<br>
         💰 <b>Total Pemasukan: Rp${total.toLocaleString('id-ID')}</b>
       `;
-      // Tabel detail
       if (detailRows.length === 0) {
         document.getElementById('detailLaporan').innerHTML = '<p style="color:#888;">Tidak ada transaksi</p>';
         return;
