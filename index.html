@@ -59,6 +59,13 @@
         <p style="color:red; text-align:center; margin-top:6px;" id="loginError"></p>
       </div>
       <hr style="margin:16px 0;">
+      <div style="margin-bottom:16px;">
+        <label>Password Kontroler</label>
+        <input type="password" id="passwordKontroler" placeholder="Password kontroler" autocomplete="off">
+        <button class="btn warning" style="width:100%; margin-top:8px;" onclick="loginKontroler()">Masuk Kontroler</button>
+        <p style="color:red; text-align:center; margin-top:6px;" id="kontrolerLoginError"></p>
+      </div>
+      <hr style="margin:16px 0;">
       <div>
         <label>Password Admin</label>
         <input type="password" id="passwordAdminInput" placeholder="Password admin" autocomplete="off">
@@ -74,7 +81,6 @@
         <h1>🚗 Parkir TB</h1>
         <button class="btn small" onclick="logout()">↩️ Logout</button>
       </div>
-
       <div class="card">
         <h3>➕ Kendaraan Masuk</h3>
         <div class="grid-2" style="margin:10px 0;">
@@ -88,7 +94,6 @@
         </div>
         <button id="btnSimpanMasuk" class="btn success" style="width:100%; margin-top:10px;" disabled onclick="simpanMasuk()">✔️ Simpan Masuk</button>
       </div>
-
       <div class="card keluar-card">
         <h3>🚪 Kendaraan Keluar</h3>
         <div class="autocomplete-wrap">
@@ -102,10 +107,43 @@
           <button class="btn warning" style="margin-top:8px;" onclick="prosesKeluar()">✔️ Keluarkan</button>
         </div>
       </div>
-
       <div class="card">
         <h3>📋 Parkir Hari Ini</h3>
         <div class="table-wrap" id="daftarHariIni"></div>
+      </div>
+    </div>
+
+    <!-- Halaman Kontroler -->
+    <div id="kontrollerSection" class="hidden">
+      <div class="header">
+        <h1>🔍 Kontroler TB</h1>
+        <button class="btn small" onclick="logout()">↩️ Logout</button>
+      </div>
+      <div class="card">
+        <h3>🔍 Cek Kendaraan Parkir</h3>
+        <div class="autocomplete-wrap">
+          <input type="text" id="cariParkirKontroller" placeholder="Ketik nomor polisi kendaraan parkir..." autocomplete="off" oninput="autocompleteKontrollerParkir()">
+          <div id="suggestionsKontrollerParkir" class="suggestions hidden"></div>
+        </div>
+        <div id="detailKontrollerParkir" class="hidden" style="margin-top:10px;">
+          <p><strong id="kontrollerParkirPlat"></strong> (<span id="kontrollerParkirJenis"></span>)</p>
+          <p>Masuk: <span id="kontrollerParkirWaktu"></span></p>
+          <img id="kontrollerParkirFoto" class="foto-besar">
+        </div>
+      </div>
+      <div class="card">
+        <h3>📋 Parkir Hari Ini</h3>
+        <div class="table-wrap" id="daftarHariIniKontroller"></div>
+      </div>
+      <div class="card">
+        <h3>📝 Catat Kendaraan Tidak Terdata</h3>
+        <input type="text" id="noPolisiCatatan" placeholder="Nomor Polisi" minlength="8" autocomplete="off">
+        <select id="jenisCatatan">
+          <option value="motor">🏍️ Motor</option>
+          <option value="mobil">🚗 Mobil</option>
+        </select>
+        <textarea id="isiCatatan" placeholder="Keterangan / catatan..." rows="2"></textarea>
+        <button class="btn success" style="margin-top:10px;" onclick="simpanCatatan()">✔️ Simpan Catatan</button>
       </div>
     </div>
 
@@ -115,7 +153,6 @@
         <h1>🔐 Admin Panel</h1>
         <button class="btn small" onclick="logout()">↩️ Logout</button>
       </div>
-
       <div class="card">
         <h3>🔍 Cek Kendaraan Parkir</h3>
         <div class="autocomplete-wrap">
@@ -128,7 +165,6 @@
           <img id="adminParkirFoto" class="foto-besar">
         </div>
       </div>
-
       <div class="card">
         <h3>💰 Laporan Keuangan</h3>
         <div class="flex-row" style="flex-wrap:wrap; gap:8px;">
@@ -146,8 +182,6 @@
         <div class="ringkasan" id="ringkasanLaporan" style="margin-top:10px;"></div>
         <div class="table-wrap" id="detailLaporan" style="margin-top:10px;"></div>
       </div>
-
-      <!-- RIWAYAT + MULTI HAPUS -->
       <div class="card">
         <h3>📜 Riwayat Kendaraan</h3>
         <div class="flex-row" style="margin-bottom:10px;">
@@ -164,12 +198,19 @@
         </div>
         <div class="table-wrap" id="riwayatAdmin"></div>
       </div>
-
       <div class="card">
-        <h3>🔑 Ubah Password Petugas</h3>
+        <h3>📝 Catatan Kontroler</h3>
+        <div class="table-wrap" id="catatanAdmin"></div>
+      </div>
+      <div class="card">
+        <h3>🔑 Ubah Password</h3>
         <div class="flex-row">
-          <input type="password" id="newPetugasPass" placeholder="Password baru" style="flex:2;">
-          <button class="btn primary" onclick="ubahPasswordPetugas()">Simpan</button>
+          <input type="password" id="newPetugasPass" placeholder="Pass petugas baru" style="flex:1;">
+          <button class="btn primary small" onclick="ubahPasswordPetugas()">Simpan</button>
+        </div>
+        <div class="flex-row" style="margin-top:8px;">
+          <input type="password" id="newKontrolerPass" placeholder="Pass kontroler baru" style="flex:1;">
+          <button class="btn primary small" onclick="ubahPasswordKontroler()">Simpan</button>
         </div>
       </div>
     </div>
@@ -197,15 +238,19 @@
     const API_KEY = '275854795451865';
     const CLOUDINARY_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 
+    // State
     let jenisKendaraan = 'motor';
     let passwordPetugas = '12345';
+    let passwordKontroler = '12354';
     let passwordAdmin = '05092015';
     let currentKeluarKey = null;
     let daftarParkir = {};
     let currentAdminParkirKey = null;
+    let currentKontrollerParkirKey = null;
 
     const loginSection = document.getElementById('loginSection');
     const petugasSection = document.getElementById('petugasSection');
+    const kontrollerSection = document.getElementById('kontrollerSection');
     const adminSection = document.getElementById('adminSection');
     const btnMotor = document.getElementById('btnMotor');
     const btnMobil = document.getElementById('btnMobil');
@@ -267,6 +312,12 @@
       } else {
         passwordPetugas = config.petugasPassword;
       }
+      if (!config.kontrollerPassword) {
+        await db.ref('/config/kontrollerPassword').set('12354');
+        passwordKontroler = '12354';
+      } else {
+        passwordKontroler = config.kontrollerPassword;
+      }
       if (!config.adminPassword) {
         await db.ref('/config/adminPassword').set('05092015');
         passwordAdmin = '05092015';
@@ -275,6 +326,7 @@
       }
       loginSection.classList.remove('hidden');
       petugasSection.classList.add('hidden');
+      kontrollerSection.classList.add('hidden');
       adminSection.classList.add('hidden');
     }
 
@@ -285,6 +337,7 @@
       if (input === passwordPetugas) {
         loginSection.classList.add('hidden');
         petugasSection.classList.remove('hidden');
+        kontrollerSection.classList.add('hidden');
         adminSection.classList.add('hidden');
         setDefaultJenis();
         resetFormMasuk();
@@ -295,15 +348,32 @@
       }
     };
 
+    window.loginKontroler = async function() {
+      const input = document.getElementById('passwordKontroler').value;
+      const error = document.getElementById('kontrolerLoginError');
+      if (input === passwordKontroler) {
+        loginSection.classList.add('hidden');
+        petugasSection.classList.add('hidden');
+        kontrollerSection.classList.remove('hidden');
+        adminSection.classList.add('hidden');
+        loadKontrollerData();
+        error.textContent = '';
+      } else {
+        error.textContent = 'Password kontroler salah!';
+      }
+    };
+
     window.loginAdmin = async function() {
       const input = document.getElementById('passwordAdminInput').value;
       const error = document.getElementById('adminLoginError');
       if (input === passwordAdmin) {
         loginSection.classList.add('hidden');
         petugasSection.classList.add('hidden');
+        kontrollerSection.classList.add('hidden');
         adminSection.classList.remove('hidden');
         loadLaporan();
         loadRiwayatAdmin();
+        loadCatatanAdmin();
         error.textContent = '';
       } else {
         error.textContent = 'Password admin salah!';
@@ -313,10 +383,13 @@
     window.logout = function() {
       loginSection.classList.remove('hidden');
       petugasSection.classList.add('hidden');
+      kontrollerSection.classList.add('hidden');
       adminSection.classList.add('hidden');
       document.getElementById('passwordPetugas').value = '';
+      document.getElementById('passwordKontroler').value = '';
       document.getElementById('passwordAdminInput').value = '';
       document.getElementById('loginError').textContent = '';
+      document.getElementById('kontrolerLoginError').textContent = '';
       document.getElementById('adminLoginError').textContent = '';
       resetFormMasuk();
     };
@@ -370,7 +443,7 @@
       btnSimpanMasuk.disabled = (noPolisiInput.value.trim().length < 8 || !fotoInput.files[0]);
     });
 
-    // ============ SIMPAN MASUK (dengan public_id dan delete_token) ============
+    // ============ SIMPAN MASUK ============
     window.simpanMasuk = async function() {
       const noPol = noPolisiInput.value.trim();
       if (noPol.length < 8) { alert('Nomor polisi minimal 8 karakter!'); return; }
@@ -389,7 +462,6 @@
         if (!data.secure_url) throw new Error('Upload gagal');
         const fotoUrl = data.secure_url;
         const publicId = data.public_id;
-        const deleteToken = data.delete_token;
 
         const newRef = db.ref('/kendaraan').push();
         const waktuMasuk = Date.now();
@@ -399,7 +471,6 @@
           waktuMasuk: waktuMasuk,
           fotoMasuk: fotoUrl,
           fotoMasukPublicId: publicId || '',
-          fotoMasukDeleteToken: deleteToken || '',
           status: 'masuk',
           waktuKeluar: null
         });
@@ -416,21 +487,20 @@
       }
     };
 
-    // ============ DAFTAR PARKIR ============
+    // ============ DAFTAR PARKIR (PETUGAS) ============
     function loadDaftarParkir() {
       db.ref('/kendaraan').orderByChild('status').equalTo('masuk').on('value', snap => {
         daftarParkir = snap.val() || {};
-        tampilkanDaftarHariIni();
+        tampilkanDaftarHariIni(document.getElementById('daftarHariIni'));
       });
       db.ref('/kendaraan').orderByChild('waktuMasuk').on('value', snap => {
-        tampilkanDaftarHariIni(snap.val());
+        tampilkanDaftarHariIni(document.getElementById('daftarHariIni'), snap.val());
       });
     }
 
-    function tampilkanDaftarHariIni(data) {
+    function tampilkanDaftarHariIni(container, data) {
       if (!data) data = daftarParkir;
       const hariIni = new Date().toDateString();
-      const container = document.getElementById('daftarHariIni');
       const entries = Object.entries(data || {}).filter(([k, v]) => new Date(v.waktuMasuk).toDateString() === hariIni)
         .sort((a, b) => b[1].waktuMasuk - a[1].waktuMasuk);
       if (entries.length === 0) {
@@ -450,7 +520,7 @@
       container.innerHTML = html;
     }
 
-    // ============ AUTOCOMPLETE KELUAR ============
+    // ============ KELUAR KENDARAAN (PETUGAS) ============
     window.autocompleteKeluar = function() {
       const input = document.getElementById('cariKeluar').value.trim().toUpperCase();
       const box = suggestionsBox;
@@ -481,6 +551,62 @@
       document.getElementById('cariKeluar').value = '';
       currentKeluarKey = null;
       loadDaftarParkir();
+    };
+
+    // ============ KONTROLLER FUNCTIONS ============
+    function loadKontrollerData() {
+      // Load daftar parkir hari ini
+      db.ref('/kendaraan').orderByChild('status').equalTo('masuk').on('value', snap => {
+        daftarParkir = snap.val() || {};
+        tampilkanDaftarHariIni(document.getElementById('daftarHariIniKontroller'));
+      });
+      db.ref('/kendaraan').orderByChild('waktuMasuk').on('value', snap => {
+        tampilkanDaftarHariIni(document.getElementById('daftarHariIniKontroller'), snap.val());
+      });
+    }
+
+    window.autocompleteKontrollerParkir = async function() {
+      const input = document.getElementById('cariParkirKontroller').value.trim().toUpperCase();
+      const box = document.getElementById('suggestionsKontrollerParkir');
+      if (input.length === 0) { box.classList.add('hidden'); return; }
+      const snap = await db.ref('/kendaraan').orderByChild('status').equalTo('masuk').once('value');
+      const dataParkir = snap.val() || {};
+      const matches = Object.entries(dataParkir).filter(([k, v]) => v.noPolisi.includes(input));
+      if (matches.length === 0) { box.classList.add('hidden'); return; }
+      box.innerHTML = matches.map(([k, v]) => `<div onclick="pilihKontrollerParkir('${k}')">${v.noPolisi} (${v.jenis})</div>`).join('');
+      box.classList.remove('hidden');
+    };
+
+    window.pilihKontrollerParkir = function(key) {
+      db.ref(`/kendaraan/${key}`).once('value').then(snap => {
+        const data = snap.val();
+        if (!data) return;
+        document.getElementById('cariParkirKontroller').value = data.noPolisi;
+        document.getElementById('suggestionsKontrollerParkir').classList.add('hidden');
+        document.getElementById('detailKontrollerParkir').classList.remove('hidden');
+        document.getElementById('kontrollerParkirPlat').textContent = data.noPolisi;
+        document.getElementById('kontrollerParkirJenis').textContent = data.jenis;
+        document.getElementById('kontrollerParkirWaktu').textContent = new Date(data.waktuMasuk).toLocaleString('id-ID');
+        document.getElementById('kontrollerParkirFoto').src = data.fotoMasuk;
+        currentKontrollerParkirKey = key;
+      });
+    };
+
+    window.simpanCatatan = async function() {
+      const noPol = document.getElementById('noPolisiCatatan').value.trim();
+      if (noPol.length < 8) { alert('Nomor polisi minimal 8 karakter'); return; }
+      const jenis = document.getElementById('jenisCatatan').value;
+      const catatan = document.getElementById('isiCatatan').value.trim();
+      if (!catatan) { alert('Isi catatan'); return; }
+      await db.ref('/catatan').push({
+        noPolisi: noPol.toUpperCase(),
+        jenis: jenis,
+        catatan: catatan,
+        waktu: Date.now()
+      });
+      document.getElementById('noPolisiCatatan').value = '';
+      document.getElementById('isiCatatan').value = '';
+      alert('Catatan tersimpan');
     };
 
     // ============ LAPORAN KEUANGAN (ADMIN) ============
@@ -548,9 +674,8 @@
       document.getElementById('detailLaporan').innerHTML = html;
     }
 
-    // ============ RIWAYAT ADMIN + CHECKBOX + MULTI HAPUS ============
-    let currentEntries = []; // simpan entries yang tampil
-
+    // ============ RIWAYAT ADMIN + MULTI HAPUS ============
+    let currentEntries = [];
     async function loadRiwayatAdmin(filterNo = null) {
       const tgl = document.getElementById('filterTanggal').value;
       const noPolFilter = filterNo || document.getElementById('filterNoPolisi').value.trim().toUpperCase();
@@ -599,43 +724,27 @@
       checkboxes.forEach(cb => cb.checked = selectAllCheckbox.checked);
     };
 
-    // Fungsi hapus satu kendaraan (dipanggil dari tombol Hapus per baris)
     window.hapusKendaraan = async function(key) {
       if (!confirm('Hapus permanen data ini? (Foto juga akan dihapus)')) return;
       await hapusDataDanFoto([key]);
     };
 
-    // Fungsi umum menghapus banyak key
     async function hapusDataDanFoto(keys) {
       if (keys.length === 0) return;
       const snap = await db.ref('/kendaraan').once('value');
       const allData = snap.val() || {};
       const updates = {};
-      const deletePromises = [];
       keys.forEach(key => {
         const data = allData[key];
         if (data) {
           updates[`kendaraan/${key}`] = null;
-          if (data.fotoMasukPublicId && data.fotoMasukDeleteToken) {
-            deletePromises.push(destroyCloudinary(data.fotoMasukPublicId, data.fotoMasukDeleteToken));
-          }
         }
       });
       if (Object.keys(updates).length === 0) return;
       await db.ref().update(updates);
-      await Promise.allSettled(deletePromises);
+      // Tidak hapus foto dari Cloudinary karena diserahkan ke manual
       loadRiwayatAdmin();
       loadLaporan();
-    }
-
-    async function destroyCloudinary(publicId, deleteToken) {
-      const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/destroy`;
-      const formData = new FormData();
-      formData.append('public_id', publicId);
-      formData.append('token', deleteToken);
-      formData.append('api_key', API_KEY);
-      const res = await fetch(url, { method: 'POST', body: formData });
-      return res.json();
     }
 
     window.hapusTerpilih = function() {
@@ -644,18 +753,15 @@
         alert('Pilih data yang akan dihapus.');
         return;
       }
-      if (!confirm(`Hapus ${selected.length} data terpilih? Foto juga akan dihapus.`)) return;
+      if (!confirm(`Hapus ${selected.length} data terpilih?`)) return;
       hapusDataDanFoto(selected);
     };
 
     window.hapusHariIni = function() {
       const today = new Date().toDateString();
       const keys = currentEntries.filter(([key, val]) => new Date(val.waktuMasuk).toDateString() === today).map(([key]) => key);
-      if (keys.length === 0) {
-        alert('Tidak ada data hari ini.');
-        return;
-      }
-      if (!confirm(`Hapus semua data hari ini (${keys.length} data)? Foto juga akan dihapus.`)) return;
+      if (keys.length === 0) { alert('Tidak ada data hari ini.'); return; }
+      if (!confirm(`Hapus semua data hari ini (${keys.length} data)?`)) return;
       hapusDataDanFoto(keys);
     };
 
@@ -667,15 +773,11 @@
         const d = new Date(val.waktuMasuk);
         return d.getMonth() === bulanIni && d.getFullYear() === tahunIni;
       }).map(([key]) => key);
-      if (keys.length === 0) {
-        alert('Tidak ada data bulan ini.');
-        return;
-      }
-      if (!confirm(`Hapus semua data bulan ini (${keys.length} data)? Foto juga akan dihapus.`)) return;
+      if (keys.length === 0) { alert('Tidak ada data bulan ini.'); return; }
+      if (!confirm(`Hapus semua data bulan ini (${keys.length} data)?`)) return;
       hapusDataDanFoto(keys);
     };
 
-    // Edit kendaraan
     window.editKendaraan = async function(key) {
       const snap = await db.ref(`/kendaraan/${key}`).once('value');
       const data = snap.val();
@@ -687,7 +789,28 @@
       }
     };
 
-    // ============ AUTOCOMPLETE NO POLISI UNTUK RIWAYAT ============
+    // ============ CATATAN ADMIN ============
+    async function loadCatatanAdmin() {
+      const snap = await db.ref('/catatan').once('value');
+      const data = snap.val() || {};
+      const entries = Object.entries(data).sort((a, b) => b[1].waktu - a[1].waktu);
+      const container = document.getElementById('catatanAdmin');
+      if (entries.length === 0) {
+        container.innerHTML = '<p style="color:#888;">Belum ada catatan</p>';
+        return;
+      }
+      let html = '<table><tr><th>No Pol</th><th>Jns</th><th>Catatan</th><th>Waktu</th></tr>';
+      entries.forEach(([key, val]) => {
+        const w = new Date(val.waktu).toLocaleString('id-ID');
+        html += `<tr>
+          <td>${val.noPolisi}</td><td>${val.jenis}</td><td>${val.catatan}</td><td>${w}</td>
+        </tr>`;
+      });
+      html += '</table>';
+      container.innerHTML = html;
+    }
+
+    // ============ AUTOCOMPLETE ADMIN ============
     window.autocompleteNoPolisi = async function() {
       const input = document.getElementById('filterNoPolisi').value.trim().toUpperCase();
       const box = document.getElementById('suggestionsNoPolisi');
@@ -706,7 +829,6 @@
       loadRiwayatAdmin(np);
     };
 
-    // ============ AUTOCOMPLETE CEK PARKIR (ADMIN) ============
     window.autocompleteAdminParkir = async function() {
       const input = document.getElementById('cariParkirAdmin').value.trim().toUpperCase();
       const box = document.getElementById('suggestionsAdminParkir');
@@ -734,6 +856,7 @@
       });
     };
 
+    // ============ UBAH PASSWORD ============
     window.ubahPasswordPetugas = async function() {
       const newPass = document.getElementById('newPetugasPass').value.trim();
       if (newPass.length < 4) { alert('Password minimal 4 karakter'); return; }
@@ -743,6 +866,16 @@
       document.getElementById('newPetugasPass').value = '';
     };
 
+    window.ubahPasswordKontroler = async function() {
+      const newPass = document.getElementById('newKontrolerPass').value.trim();
+      if (newPass.length < 4) { alert('Password minimal 4 karakter'); return; }
+      await db.ref('/config/kontrollerPassword').set(newPass);
+      passwordKontroler = newPass;
+      alert('Password kontroler berhasil diubah');
+      document.getElementById('newKontrolerPass').value = '';
+    };
+
+    // ============ KLIK DI LUAR ============
     document.addEventListener('click', function(e) {
       if (!e.target.closest('#cariKeluar') && !e.target.closest('#suggestionsBox')) {
         suggestionsBox.classList.add('hidden');
@@ -752,6 +885,9 @@
       }
       if (!e.target.closest('#cariParkirAdmin') && !e.target.closest('#suggestionsAdminParkir')) {
         document.getElementById('suggestionsAdminParkir').classList.add('hidden');
+      }
+      if (!e.target.closest('#cariParkirKontroller') && !e.target.closest('#suggestionsKontrollerParkir')) {
+        document.getElementById('suggestionsKontrollerParkir').classList.add('hidden');
       }
     });
 
