@@ -28,7 +28,7 @@
     .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
     .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
     img.thumbnail { width: 55px; height: 55px; object-fit: cover; border-radius: 8px; cursor: pointer; }
-    img.preview { max-width: 100%; max-height: 250px; border-radius: 8px; margin-top: 8px; }
+    img.preview { display: block; margin: 10px auto 0; max-width: 100%; max-height: 250px; border-radius: 8px; }
     .foto-besar { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; }
     .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -14px; }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -289,7 +289,8 @@
         loginSection.classList.add('hidden');
         petugasSection.classList.remove('hidden');
         adminSection.classList.add('hidden');
-        pilihJenis('motor');
+        // Set default jenis motor (hanya styling, tanpa kamera)
+        setDefaultJenis();
         resetFormMasuk();
         loadDaftarParkir();
         error.textContent = '';
@@ -334,6 +335,14 @@
       suggestionsBox.classList.add('hidden');
       document.getElementById('cariKeluar').value = '';
       currentKeluarKey = null;
+    }
+
+    function setDefaultJenis() {
+      jenisKendaraan = 'motor';
+      btnMotor.style.background = '#1a73e8';
+      btnMotor.style.color = 'white';
+      btnMobil.style.background = '#e0e0e0';
+      btnMobil.style.color = '#333';
     }
 
     // ============ PILIH JENIS & BUKA KAMERA ============
@@ -404,6 +413,7 @@
         });
 
         resetFormMasuk();
+        setDefaultJenis(); // reset styling ke motor
         loadDaftarParkir();
         alert('✅ Kendaraan tercatat!');
       } catch (err) {
@@ -616,8 +626,7 @@
     };
 
     window.pilihAdminParkir = function(key) {
-      const val = daftarParkir[key] || {}; // gunakan cache jika ada
-      // ambil dari snapshot
+      // Ambil data terbaru langsung dari Firebase
       db.ref(`/kendaraan/${key}`).once('value').then(snap => {
         const data = snap.val();
         if (!data) return;
